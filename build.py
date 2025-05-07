@@ -137,8 +137,8 @@ with tempfile.TemporaryDirectory() as tools_tmpdir:
 
     # Download and apply patches
     patch_urls = {
-        "features": "https://aur.archlinux.org/cgit/aur.git/plain/patch.json?h=code-features",
-        "marketplace": "https://aur.archlinux.org/cgit/aur.git/plain/patch.json?h=code-marketplace",
+        "features": "https://aur.archlinux.org/cgit/aur.git/tree/patch.json?h=windsurf-features",
+        # "marketplace": "https://aur.archlinux.org/cgit/aur.git/plain/patch.json?h=code-marketplace",
     }
 
     for patch_url in patch_urls.values():

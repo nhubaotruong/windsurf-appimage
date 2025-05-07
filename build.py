@@ -4,13 +4,12 @@ import json
 import os
 import pathlib
 import platform
-import re
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import urllib.request
-import tarfile
 
 # Keep original headers
 headers = {
@@ -41,14 +40,19 @@ def apply_patch(product_path, patch_data):
 
 
 # Get latest tag
-latest_tag = (
-    subprocess.check_output(
-        ["git", "describe", "--tags", "--abbrev=0"], cwd=os.getcwd()
+try:
+    latest_tag = (
+        subprocess.check_output(
+            ["git", "describe", "--tags", "--abbrev=0"], cwd=os.getcwd()
+        )
+        .decode()
+        .strip()
     )
-    .decode()
-    .strip()
-)
-print("latest_tag", latest_tag)
+    print("latest_tag", latest_tag)
+except subprocess.CalledProcessError:
+    print("No git tags found, using '0.0.0' as fallback")
+    latest_tag = "0.0.0"
+
 # Check version from headers first
 url = "https://windsurf-stable.codeium.com/api/update/linux-x64/stable/latest"
 get_version_req = urllib.request.Request(url, method="GET", headers=headers)
@@ -81,12 +85,14 @@ with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as tmp_file:
     os.fsync(tmp_file.fileno())
     tmp_name = tmp_file.name
 
+shutil.rmtree("windsurf.AppDir", ignore_errors=True)
+
 # Create extraction directory
-os.makedirs("winsurf.AppDir", exist_ok=True)
+os.makedirs("windsurf.AppDir", exist_ok=True)
 
 # Extract tar.gz file using Python's built-in tarfile module
 with tarfile.open(tmp_name, "r:gz") as tar:
-    tar.extractall(path="winsurf.AppDir")
+    tar.extractall(path="windsurf.AppDir", filter="fully_trusted")
 
 # Clean up after extraction is complete
 try:
@@ -94,9 +100,18 @@ try:
 except OSError:
     print(f"Warning: Could not remove temporary file {tmp_name}")
 
+shutil.copyfile("windsurf.desktop", "windsurf.AppDir/windsurf.desktop")
+shutil.copyfile("AppRun", "windsurf.AppDir/AppRun")
+os.chmod("windsurf.AppDir/AppRun", 0o755)
+shutil.copyfile(
+    "windsurf.AppDir/Windsurf/resources/app/resources/linux/code.png",
+    "windsurf.AppDir/windsurf.png",
+)
+
 # Handle appimagetool and patches in separate temp directory
 with tempfile.TemporaryDirectory() as tools_tmpdir:
     machine = platform.machine()
+    original_dir = os.getcwd()
 
     # Download and setup appimagetool
     appimagetool_url = f"https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-{machine}.AppImage"
@@ -108,8 +123,6 @@ with tempfile.TemporaryDirectory() as tools_tmpdir:
     os.chmod(appimagetool_path, 0o755)
 
     # Extract appimagetool
-    original_dir = os.getcwd()
-    # os.chdir(tools_tmpdir)
     subprocess.run(
         [appimagetool_path, "--appimage-extract"],
         check=True,
@@ -117,11 +130,10 @@ with tempfile.TemporaryDirectory() as tools_tmpdir:
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
-    # os.chdir(original_dir)
     appimagetool_dir = os.path.join(tools_tmpdir, "squashfs-root")
 
     # Set permissions
-    os.chmod("cursor.AppDir/squashfs-root", 0o755)
+    os.chmod("windsurf.AppDir", 0o755)
 
     # Download and apply patches
     patch_urls = {
@@ -134,13 +146,9 @@ with tempfile.TemporaryDirectory() as tools_tmpdir:
         with urllib.request.urlopen(req) as response:
             patch_data = json.load(response)
             apply_patch(
-                "winsurf.AppDir/Winsurf/resources/app/product.json",
+                "windsurf.AppDir/Windsurf/resources/app/product.json",
                 patch_data,
             )
-
-    # os.remove(
-    #     "cursor.AppDir/squashfs-root/usr/share/cursor/resources/appimageupdatetool.AppImage"
-    # )
 
     # Build final AppImage
     # Create dist directory with absolute path
@@ -150,13 +158,14 @@ with tempfile.TemporaryDirectory() as tools_tmpdir:
     update_info = f"gh-releases-zsync|{github_repo}|latest|Windsurf*.AppImage.zsync"
     output_name = f"Windsurf-{latest_version}-{machine}.AppImage"
 
+    # Run appimagetool to create the AppImage
     subprocess.run(
         [
             os.path.join(appimagetool_dir, "AppRun"),
             "-n",
             "--comp",
             "zstd",
-            os.path.join(original_dir, "winsurf.AppDir"),
+            os.path.join(original_dir, "windsurf.AppDir"),
             "--updateinformation",
             update_info,
             output_name,

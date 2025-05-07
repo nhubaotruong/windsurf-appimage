@@ -1,0 +1,18 @@
+[Desktop Entry]
+Actions=new-empty-window
+Categories=Utility;TextEditor;Development;IDE
+Comment=Code Editing. Redefined.
+Exec=AppRun %F
+GenericName=Text Editor
+Icon=windsurf
+Keywords=vscode
+Name=Windsurf
+StartupNotify=true
+StartupWMClass=windsurf
+Type=Application
+Version=1.4
+
+[Desktop Action new-empty-window]
+Exec=AppRun --new-window %F
+Icon=windsurf
+Name=New Empty Window

@@ -136,19 +136,19 @@ with tempfile.TemporaryDirectory() as tools_tmpdir:
     os.chmod("windsurf.AppDir", 0o755)
 
     # Download and apply patches
-    patch_urls = {
-        "features": "https://aur.archlinux.org/cgit/aur.git/plain/patch.json?h=windsurf-features",
-        # "marketplace": "https://aur.archlinux.org/cgit/aur.git/plain/patch.json?h=code-marketplace",
-    }
+    # patch_urls = {
+    #     "features": "https://aur.archlinux.org/cgit/aur.git/plain/patch.json?h=windsurf-features",
+    #     "marketplace": "https://aur.archlinux.org/cgit/aur.git/plain/patch.json?h=code-marketplace",
+    # }
 
-    for patch_url in patch_urls.values():
-        req = urllib.request.Request(patch_url, headers=headers)
-        with urllib.request.urlopen(req) as response:
-            patch_data = json.load(response)
-            apply_patch(
-                "windsurf.AppDir/Windsurf/resources/app/product.json",
-                patch_data,
-            )
+    # for patch_url in patch_urls.values():
+    #     req = urllib.request.Request(patch_url, headers=headers)
+    #     with urllib.request.urlopen(req) as response:
+    #         patch_data = json.load(response)
+    #         apply_patch(
+    #             "windsurf.AppDir/Windsurf/resources/app/product.json",
+    #             patch_data,
+    #         )
 
     # Build final AppImage
     # Create dist directory with absolute path

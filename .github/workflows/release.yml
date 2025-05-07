@@ -1,0 +1,64 @@
+name: Build AppImage
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "5 */12 * * *"
+  push:
+    branches:
+      - "master"
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    name: Cursor AppImage
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install desktop-file-utils zsync -y --no-install-recommends
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build
+        id: build
+        run: |
+          python3 ./build.py
+
+      - name: Upload artifact
+        if: env.APP_UPDATE_NEEDED == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          path: 'dist'
+
+      - name: Release tag
+        if: env.APP_UPDATE_NEEDED == 'true'
+        uses: ncipollo/release-action@v1
+        with:
+          name: Cursor AppImage ${{ env.VERSION }}
+          tag: ${{ env.VERSION }}
+          artifacts: |
+            dist/*
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: true
+          removeArtifacts: true
+          artifactErrorsFailBuild: true
+          generateReleaseNotes: true
+
+      - name: Release latest
+        if: env.APP_UPDATE_NEEDED == 'true'
+        uses: ncipollo/release-action@v1
+        with:
+          name: Cursor AppImage latest
+          tag: latest
+          artifacts: |
+            dist/*
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: true
+          removeArtifacts: true
+          artifactErrorsFailBuild: true
+          generateReleaseNotes: true

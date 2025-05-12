@@ -27,7 +27,7 @@ def download_progress_hook(count, blocksize, totalsize):
     sys.stdout.flush()
 
 
-def apply_patch(product_path: str, patch_data: dict) -> None:
+def apply_patch(product_path, patch_data):
     with open(file=product_path, mode="r") as product_file:
         product_data = json.load(product_file)
 
@@ -136,36 +136,19 @@ with tempfile.TemporaryDirectory() as tools_tmpdir:
     os.chmod("windsurf.AppDir", 0o755)
 
     # Download and apply patches
-    patch_urls = {
-        "features": "https://aur.archlinux.org/cgit/aur.git/plain/patch.json?h=windsurf-features",
-        # "marketplace": "https://aur.archlinux.org/cgit/aur.git/plain/patch.json?h=code-marketplace",
-    }
+    # patch_urls = {
+    #     "features": "https://aur.archlinux.org/cgit/aur.git/plain/patch.json?h=windsurf-features",
+    #     "marketplace": "https://aur.archlinux.org/cgit/aur.git/plain/patch.json?h=code-marketplace",
+    # }
 
-    for patch_url in patch_urls.values():
-        req = urllib.request.Request(patch_url, headers=headers)
-        with urllib.request.urlopen(req) as response:
-            patch_data = json.load(response)
-            apply_patch(
-                "windsurf.AppDir/Windsurf/resources/app/product.json",
-                patch_data,
-            )
-    
-    marketplace_patch = {
-        "serviceUrl": "https://marketplace.visualstudio.com/_apis/public/gallery",
-        "cacheUrl": "https://vscode.blob.core.windows.net/gallery/index",
-        "itemUrl": "https://marketplace.visualstudio.com/items"
-    }
-
-    with open("windsurf.AppDir/Windsurf/resources/app/product.json", "r") as product_file:
-        product_data = json.load(product_file)
-
-    # Apply marketplace patch
-    for key in marketplace_patch.keys():
-        product_data[key] = marketplace_patch[key]
-    product_data.pop("linkProtectionTrustedDomains", None)
-
-    with open("windsurf.AppDir/Windsurf/resources/app/product.json", "w") as product_file:
-        json.dump(product_data, product_file, indent="\t")
+    # for patch_url in patch_urls.values():
+    #     req = urllib.request.Request(patch_url, headers=headers)
+    #     with urllib.request.urlopen(req) as response:
+    #         patch_data = json.load(response)
+    #         apply_patch(
+    #             "windsurf.AppDir/Windsurf/resources/app/product.json",
+    #             patch_data,
+    #         )
 
     # Build final AppImage
     # Create dist directory with absolute path
